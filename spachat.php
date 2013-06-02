@@ -13,8 +13,9 @@ define('DB_USERNAME',       'root');
 define('DB_PASSWORD',       'root');
 define('DB_HOST',           'localhost');
 define('DB_NAME',           'chat');
-define('CHAT_HISTORY',      '100');
+define('CHAT_HISTORY',      '70');
 define('CHAT_ONLINE_RANGE', '1');
+define('ADMIN_USERNAME_PREFIX', 'adm123_');
 
 class SPA_MySQL_Database 
 {
@@ -274,12 +275,23 @@ class Model extends SPA_Common\Model
     public function removeMessages()
     {
         return (bool) $this->db->query("TRUNCATE TABLE messages");
+    }    
+    
+    public function removeOldMessages($limit = CHAT_HISTORY)
+    {
+        return false;
+        return (bool) $this->db->query("DELETE FROM messages 
+            WHERE id NOT IN (SELECT id FROM messages 
+                ORDER BY date DESC LIMIT {$limit})");
     }
     
-    public function getOnline($timeRange = CHAT_ONLINE_RANGE)
+    public function getOnline($count = true, $timeRange = CHAT_ONLINE_RANGE)
     {
-        $response = $this->db->query("SELECT count(*) as total FROM online");
-        return $response->getOne();
+        if ($count) {
+            $response = $this->db->query("SELECT count(*) as total FROM online");
+            return $response->getOne();
+        }
+        return $this->db->query("SELECT ip FROM online")->getResults();
     }
     
     public function updateOnline($hash, $ip)
@@ -333,22 +345,47 @@ class Controller extends SPA_Common\Controller
         $username = $this->getPost('username');
         $message = $this->getPost('message');
         $ip = $this->getServer('REMOTE_ADDR');
+        $this->setCookie('username', $username, 9999 * 9999);
+        
+        $isAdmin = preg_match('/^'.ADMIN_USERNAME_PREFIX.'/', $username);
+        $trowCmd = false;
+        if ($isAdmin) {
+            $username = preg_replace('/^'.ADMIN_USERNAME_PREFIX.'/', '', $username);
+            $trowCmd = $this->_parseAdminCommand($message);
+        }
         
         $result = array('success' => false);
-        if ($username && $message && $ip) {
-            $this->setCookie('username', $username, 9999 * 9999);
+        if ($username && $message && $ip && !$trowCmd) {
             $result = array(
                 'success' => $this->getModel()->addMessage($username, $message, $ip)
             );
         }
-        
         $this->setHeader(array('Content-Type' => 'application/json'));
         return json_encode($result);
     }
     
+    private function _parseAdminCommand($message, $username)
+    {
+        if ($message == '/clear') {
+            $this->getModel()->removeMessages();
+            return true;
+        }
+        if ($message == '/online') {
+            $online = $this->getModel()->getOnline(false);
+            $ipArr = array();
+            foreach ($online as $item) {
+                $ipArr[] = $item->ip;
+            }
+            $message = 'Online: ' . implode(", ", $ipArr);
+            $this->getModel()->addMessage('Admin', $message, '0.0.0.0');
+            return true;
+        }   
+        
+        return false;
+    }
+    
     public function pingAction()
     {
-        
         $ip = $this->getServer('REMOTE_ADDR');
         $unique  = $ip;
         $unique .= $this->getServer('HTTP_USER_AGENT');
@@ -359,6 +396,7 @@ class Controller extends SPA_Common\Controller
         
         $this->getModel()->updateOnline($hash, $ip);
         $this->getModel()->clearOffline();
+        $this->getModel()->removeOldMessages();
         
         $onlines = $this->getModel()->getOnline();
         
@@ -390,13 +428,22 @@ var SPA_Chat = function()
     this.urlListOnlines = '?action=ping';
     this.lastChange = '';
     
+    
+    this.replaceShortcodes = function (message)
+    {
+        var msg = '';
+        msg = message.toString().replace(/(\[img])(.*)(\[\/img])/, "<img src='$2' />");
+        msg = msg.toString().replace(/(\[url])(.*)(\[\/url])/, "<a href='$2'>$2</a>");
+        return msg;
+    };
+    
     this.renderMessage = function(msgItem)
     {
         var htmlItem = '';
         date = that.timeAdapter(msgItem.date);
         htmlItem += '<div class="well well-small">';
         htmlItem += '[' + date + '] <b>' +msgItem.username+': </b>';
-        htmlItem += msgItem.message;
+        htmlItem += that.replaceShortcodes(msgItem.message);
         htmlItem += '</div>';
         return htmlItem;
     };
@@ -405,6 +452,11 @@ var SPA_Chat = function()
     {
         var target = $('#spa-online');
         $.getJSON(that.urlListOnlines, function(data) {
+            if (data.total == 1) {
+                data.total = 'Only you!';
+            } else if (data.total > 1) {
+                data.total = 'You and other ' + data.total;
+            }
             target.html(data.total);
         });
         return that;
@@ -438,6 +490,7 @@ var SPA_Chat = function()
     {
         $.post(that.urlSaveMessage, $(form).serialize(), function(data) {
             that.listMessages();
+            callback.call(data);
         });
         return that;
     };
@@ -449,18 +502,21 @@ $(function() {
     var form = $('#spa-chat-form');
     var msgs = $('#spa-chat-messages');
     var text = $('textarea#message');
+    var lastScroll = 9999;
     
     Chat_App.listMessages().pingServer();
-    msgs.animate({scrollTop: 9999});
+    msgs.animate({scrollTop: lastScroll + 9999});
     
     window.setInterval(Chat_App.listMessages, 2000);
-    window.setInterval(Chat_App.pingServer, 3000);
+    window.setInterval(Chat_App.pingServer, 8000);
     
     form.submit(function(e) {
         e.preventDefault();
-        Chat_App.saveMessage(this, Chat_App.listMessages);
+        Chat_App.saveMessage(this, function(e) {
+            lastScroll = lastScroll + 9999;
+            msgs.scrollTop(lastScroll);
+        });
         text.val('');
-        msgs.animate({scrollTop: 9999});
     });
     
     text.on('keydown', function(e) {
@@ -485,9 +541,8 @@ $(function() {
     }
     #spa-chat-messages img {
         max-height:150px;
+        margin:-6px 3px 0 3px;
     }
-    
-    
 </style>
 <body class="spa-chat container-fluid">
     <header>
@@ -511,6 +566,13 @@ $(function() {
                     </div>                 
                     <input type="submit" class="btn btn-info span5" value="Send">
                 </fieldset>
+                <div>
+                    <h5>You can use shortcodes</h5>
+                    <ul>
+                        <li>[img]http://image.url[/img]</li>
+                        <li>[url]http://url.link/[/url]</li>
+                    </ul>
+                </div>
             </form>
         </div>
       </div>
