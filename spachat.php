@@ -410,15 +410,57 @@ $chatApp = new Controller(); ?><!doctype html>
 <head>
     <meta charset="utf-8">
     <title>SPA Chat - Simple PHP Ajax Chat</title>
-    <meta name="author" content="Joni2Back - Jonas Ramiro Sciangula Street - joni2back {{at}} gmail {{dot}} com">
+    <meta name="author" content="Joni2Back - Jonas Sciangula Street - joni2back {{at}} gmail {{dot}} com">
     
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
-    <script src="bootstrap/js/bootstrap.min.js"></script>
-    
-    <link href="bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">    
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+    <!-- Latest compiled and minified JavaScript -->        
 </head>
 <script type="text/javascript">
+
+var chatApp = angular.module('chatApp', ['ngCookies']);
+
+chatApp.controller('ChatAppCtrl', ['$scope', '$cookies', '$http', function($scope, $cookies, $http) {
+
+    $scope.urlListMessages = '?action=list';
+    $scope.urlSaveMessage = '?action=save';
+    $scope.urlListOnlines = '?action=ping';
+
+    $scope.messages = [];
+    $scope.online = [];
+
+    $scope.saveMessage = function(form, callback) 
+    {
+        return $http.get($scope.urlSaveMessage, $(form).serialize(), function(data) {
+            $scope.listMessages();
+        });
+        return that;
+    };
+
+    $scope.replaceShortcodes = function(message)
+    {
+        var msg = '';
+        msg = message.toString().replace(/(\[img])(.*)(\[\/img])/, "<img src='$2' />");
+        msg = msg.toString().replace(/(\[url])(.*)(\[\/url])/, "<a href='$2'>$2</a>");
+        return msg;
+    };
+
+    $scope.listMessages = function() {
+        return $http.get($scope.urlListMessages, function(data) {
+            $scope.messages = [];
+            angular.forEach(data, function(message) {
+                $scope.messages.push(message);
+            });
+        });
+    };
+});
+
+
 
 var SPA_Chat = function() 
 {
