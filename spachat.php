@@ -12,7 +12,7 @@ namespace SPA_Common;
 define('DB_USERNAME',       'root');
 define('DB_PASSWORD',       'root');
 define('DB_HOST',           'localhost');
-define('DB_NAME',           'chat');
+define('DB_NAME',           'chatangular');
 define('CHAT_HISTORY',      '70');
 define('CHAT_ONLINE_RANGE', '1');
 define('ADMIN_USERNAME_PREFIX', 'adm123_');
@@ -425,6 +425,18 @@ $chatApp = new Controller(); ?><!doctype html>
 
 var ChatApp = angular.module('ChatApp', []);
 
+ChatApp.directive('ngEnter', function () {
+    return function (scope, element, attrs) {
+        element.bind("keydown keypress", function (event) {
+            if (event.which === 13) {
+                scope.$apply(function (){
+                    scope.$eval(attrs.ngEnter);
+                });
+                event.preventDefault();
+            }
+        });
+    };
+});
 ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
 
     $scope.urlListMessages = '?action=list';
@@ -442,20 +454,24 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
         message: null
     };
 
-    $scope.saveMessage = function(form, callback) 
-    {
+    $scope.saveMessage = function(form, callback) {
+        var data = $.param($scope.user);
+        if (! ($scope.user.message.trim() && $scope.user.username.trim())) {
+            return;
+        }
+        $scope.user.message = '';
         return $http({
             method: 'POST',
             url: $scope.urlSaveMessage,
-            data: $.param($scope.user),
+            data: data,
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}
         }).success(function(data) {
             $scope.listMessages();
+            $scope.scrollDown();
         });
     };
 
-    $scope.replaceShortcodes = function(message)
-    {
+    $scope.replaceShortcodes = function(message) {
         var msg = '';
         msg = message.toString().replace(/(\[img])(.*)(\[\/img])/, "<img src='$2' />");
         msg = msg.toString().replace(/(\[url])(.*)(\[\/url])/, "<a href='$2'>$2</a>");
@@ -468,19 +484,16 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
             angular.forEach(data, function(message) {
                 $scope.messages.push(message);
             });
-            $('.well').scrollTop(9999);
         });
     };
     
-    this.pingServer = function(msgItem)
-    {
-        return $http.get(that.urlListOnlines, {}).success(function(data) {
+    this.pingServer = function(msgItem) {
+        return $http.get($scope.urlListOnlines, {}).success(function(data) {
             $scope.online = data;
         });
     };
 
-    $scope.timeAdapter = function(datetime)
-    {
+    $scope.timeAdapter = function(datetime) {
         var t = (datetime).split(/[- :]/);
         var d = new Date(t[0], t[1]-1, t[2], t[3], t[4], t[5]);
         return d.toTimeString().substr(0, 8);
@@ -489,6 +502,10 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
     $scope.init = function() {
         $scope.pidMessages = window.setInterval($scope.listMessages, 2000);
         $scope.pidPingServer = window.setInterval($scope.pingServer, 8000);
+    };
+
+    $scope.scrollDown = function() {
+        $('.messages').scrollTop(9999);
     };
 
     $scope.init();
@@ -547,7 +564,7 @@ $(function() {
                             <input type="text" ng-model="user.username" placeholder="Username" value="<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>" />
                         </div>
                         <div>
-                            <textarea ng-model="user.message"></textarea>
+                            <textarea ng-model="user.message" ng-enter="saveMessage()"></textarea>
                         </div>                 
                         <button class="btn btn-info" ng-click="saveMessage()">Send</button>
                     </fieldset>
