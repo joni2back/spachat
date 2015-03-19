@@ -406,7 +406,7 @@ class Controller extends SPA_Common\Controller
 }
 
 $chatApp = new Controller(); ?><!doctype html>
-<html>
+<html data-ng-app="ChatApp">
 <head>
     <meta charset="utf-8">
     <title>SPA Chat - Simple PHP Ajax Chat</title>
@@ -423,23 +423,35 @@ $chatApp = new Controller(); ?><!doctype html>
 </head>
 <script type="text/javascript">
 
-var chatApp = angular.module('chatApp', ['ngCookies']);
+var ChatApp = angular.module('ChatApp', []);
 
-chatApp.controller('ChatAppCtrl', ['$scope', '$cookies', '$http', function($scope, $cookies, $http) {
+ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
 
     $scope.urlListMessages = '?action=list';
     $scope.urlSaveMessage = '?action=save';
     $scope.urlListOnlines = '?action=ping';
 
+    $scope.pidMessages = null;
+    $scope.pidPingServer = null;
+
     $scope.messages = [];
-    $scope.online = [];
+    $scope.online = null;
+
+    $scope.user = {
+        username: null,
+        message: null
+    };
 
     $scope.saveMessage = function(form, callback) 
     {
-        return $http.get($scope.urlSaveMessage, $(form).serialize(), function(data) {
+        return $http({
+            method: 'POST',
+            url: $scope.urlSaveMessage,
+            data: $.param($scope.user),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        }).success(function(data) {
             $scope.listMessages();
         });
-        return that;
     };
 
     $scope.replaceShortcodes = function(message)
@@ -451,117 +463,43 @@ chatApp.controller('ChatAppCtrl', ['$scope', '$cookies', '$http', function($scop
     };
 
     $scope.listMessages = function() {
-        return $http.get($scope.urlListMessages, function(data) {
+        return $http.get($scope.urlListMessages, {}).success(function(data) {
             $scope.messages = [];
             angular.forEach(data, function(message) {
                 $scope.messages.push(message);
             });
+            $('.well').scrollTop(9999);
         });
-    };
-});
-
-
-
-var SPA_Chat = function() 
-{
-    var that = this;
-    this.urlListMessages = '?action=list';
-    this.urlSaveMessage = '?action=save';
-    this.urlListOnlines = '?action=ping';
-    this.lastChange = '';
-    
-    
-    this.replaceShortcodes = function (message)
-    {
-        var msg = '';
-        msg = message.toString().replace(/(\[img])(.*)(\[\/img])/, "<img src='$2' />");
-        msg = msg.toString().replace(/(\[url])(.*)(\[\/url])/, "<a href='$2'>$2</a>");
-        return msg;
-    };
-    
-    this.renderMessage = function(msgItem)
-    {
-        var htmlItem = '';
-        date = that.timeAdapter(msgItem.date);
-        htmlItem += '<div class="well well-small">';
-        htmlItem += '[' + date + '] <b>' +msgItem.username+': </b>';
-        htmlItem += that.replaceShortcodes(msgItem.message);
-        htmlItem += '</div>';
-        return htmlItem;
     };
     
     this.pingServer = function(msgItem)
     {
-        var target = $('#spa-online');
-        $.getJSON(that.urlListOnlines, function(data) {
-            if (data.total == 1) {
-                data.total = 'Only you!';
-            } else if (data.total > 1) {
-                data.total = 'You and other ' + data.total;
-            }
-            target.html(data.total);
+        return $http.get(that.urlListOnlines, {}).success(function(data) {
+            $scope.online = data;
         });
-        return that;
     };
-    
-    this.timeAdapter = function(datetime)
+
+    $scope.timeAdapter = function(datetime)
     {
         var t = (datetime).split(/[- :]/);
         var d = new Date(t[0], t[1]-1, t[2], t[3], t[4], t[5]);
         return d.toTimeString().substr(0, 8);
     };
 
-    this.listMessages = function() 
-    {
-        var target = $('#spa-chat-messages');
-        $.getJSON(that.urlListMessages, function(data) {
-            var items = [];
-            $.each(data, function(i, msgItem) {
-                htmlItem = that.renderMessage(msgItem);
-                items.push(htmlItem);
-            });
-            var current = items.join("\n");
-            if (that.lastChange != current) {
-                target.html(that.lastChange = current);
-            }
-        });
-        return that;
+    $scope.init = function() {
+        $scope.pidMessages = window.setInterval($scope.listMessages, 2000);
+        $scope.pidPingServer = window.setInterval($scope.pingServer, 8000);
     };
-    
-    this.saveMessage = function(form, callback) 
-    {
-        $.post(that.urlSaveMessage, $(form).serialize(), function(data) {
-            that.listMessages();
-            callback.call(data);
-        });
-        return that;
-    };
-}
+
+    $scope.init();
+}]);
+
+
+
 
 $(function() {
-    var Chat_App = new SPA_Chat();
     
-    var form = $('#spa-chat-form');
-    var msgs = $('#spa-chat-messages');
-    var text = $('textarea#message');
-    var lastScroll = 9999;
-    
-    Chat_App.listMessages().pingServer();
-    msgs.animate({scrollTop: lastScroll + 9999});
-    
-    window.setInterval(Chat_App.listMessages, 2000);
-    window.setInterval(Chat_App.pingServer, 8000);
-    
-    form.submit(function(e) {
-        e.preventDefault();
-        Chat_App.saveMessage(this, function(e) {
-            lastScroll = lastScroll + 9999;
-            msgs.scrollTop(lastScroll);
-        });
-        text.val('');
-    });
-    
-    text.on('keydown', function(e) {
+    $('text').on('keydown', function(e) {
         if (e.which == 13 || e.keyCode == 13) {
             e.preventDefault();
             form.submit();
@@ -572,50 +510,56 @@ $(function() {
 </script>
 <style>
 
-    #spa-chat-messages {
+    .messages {
         height:500px;
         overflow:hidden;
         overflow-y:scroll;
     }
-    #spa-chat-messages .well {
+    .messages .well {
         margin-right:10px;
         margin-bottom:10px;
     }
-    #spa-chat-messages img {
+    .messages .well img {
         max-height:150px;
         margin:-6px 3px 0 3px;
     }
 </style>
-<body class="spa-chat container-fluid">
+<body class="spa-chat container-fluid" data-ng-controller="ChatAppCtrl">
     <header>
-        <h3>SPA Chat - Simple PHP Ajax Chat</h3>
+        <h3>cct {{urlListOnlines}}</h3>
         <h4>Online users: <span id="spa-online"></span></h4>
     </header>
     <section>
-      <div class="row-fluid">
-        <div class="span5">
-          <div class="nav" id="spa-chat-messages"></div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="well messages well-sm">
+              <div data-ng-repeat="message in messages" class="well">
+                  <b>{{ message.username }}:</b> {{ message.message }}
+              </div>
+          </div>
         </div>  
-        <div class="span2">
-            <form id="spa-chat-form" action="?action=save">
-                <fieldset>
-                    <div class="input-prepend">
-                        <span class="add-on">#</span>
-                        <input class="span15" type="text" name="username" placeholder="Username" value="<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>" />
+        <div class="row">
+            <div class="col-md-12">
+                <form>
+                    <fieldset>
+                        <div class="input-prepend">
+                            <span class="add-on">#</span>
+                            <input type="text" ng-model="user.username" placeholder="Username" value="<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>" />
+                        </div>
+                        <div>
+                            <textarea ng-model="user.message"></textarea>
+                        </div>                 
+                        <button class="btn btn-info" ng-click="saveMessage()">Send</button>
+                    </fieldset>
+                    <div>
+                        <h5>You can use shortcodes</h5>
+                        <ul>
+                            <li>[img]http://image.url[/img]</li>
+                            <li>[url]http://url.link/[/url]</li>
+                        </ul>
                     </div>
-                    <div >
-                        <textarea cols="6" rows="3" id="message" name="message"></textarea>
-                    </div>                 
-                    <input type="submit" class="btn btn-info span5" value="Send">
-                </fieldset>
-                <div>
-                    <h5>You can use shortcodes</h5>
-                    <ul>
-                        <li>[img]http://image.url[/img]</li>
-                        <li>[url]http://url.link/[/url]</li>
-                    </ul>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
       </div>
     </section>
