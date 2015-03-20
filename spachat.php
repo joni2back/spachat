@@ -17,31 +17,31 @@ define('CHAT_HISTORY',      '70');
 define('CHAT_ONLINE_RANGE', '1');
 define('ADMIN_USERNAME_PREFIX', 'adm123_');
 
-class SPA_MySQL_Database 
+class SPA_MySQL_Database
 {
     private $_dbLink, $_queryResponse;
     public $lastResult;
-    
+
     public function __construct()
     {
         $this->_connect();
     }
-    
+
     private function _connect()
     {
         $this->_dbLink = mysql_connect(DB_HOST, DB_USERNAME, DB_PASSWORD);
         mysql_select_db(DB_NAME, $this->_dbLink);
     }
-    
-    public function query($query) 
+
+    public function query($query)
     {
         $this->_queryResponse = mysql_query($query, $this->_dbLink);
         if ($this->_queryResponse) {
             return $this;
         }
     }
-    
-    public function getResults() 
+
+    public function getResults()
     {
         $this->lastResult = array();
         if ($this->_queryResponse && !is_bool($this->_queryResponse)) {
@@ -52,7 +52,7 @@ class SPA_MySQL_Database
         }
         return $this->lastResult;
     }
-    
+
     public function getOne()
     {
         $this->lastResult = null;
@@ -60,9 +60,9 @@ class SPA_MySQL_Database
             $this->lastResult = mysql_fetch_object($this->_queryResponse);
             mysql_free_result($this->_queryResponse);
         }
-        return $this->lastResult;    
+        return $this->lastResult;
     }
-    
+
     public function disconnect()
     {
         return mysql_close($this->_dbLink);
@@ -72,7 +72,7 @@ class SPA_MySQL_Database
 abstract class Model
 {
     public $db;
-    
+
     public function __construct()
     {
         $this->db = new SPA_MySQL_Database;
@@ -83,10 +83,10 @@ abstract class Controller
 {
     private $_request, $_response, $_query, $_post, $_server, $_cookies;
     protected $_currentAction, $_defaultModel;
-    
+
     const ACTION_POSTFIX = 'Action';
     const ACTION_DEFAULT = 'indexAction';
-    
+
     public function __construct()
     {
         $this->_request  = &$_REQUEST;
@@ -96,13 +96,13 @@ abstract class Controller
         $this->_cookies  = &$_COOKIE;
         $this->init();
     }
-    
+
     public function init()
     {
         $this->dispatchActions();
         $this->render();
     }
-    
+
     public function dispatchActions()
     {
         $action = $this->getQuery('action');
@@ -121,7 +121,7 @@ abstract class Controller
         }
         return $this->_response;
     }
-    
+
     public function render()
     {
         if ($this->_response) {
@@ -133,17 +133,17 @@ abstract class Controller
             exit;
         }
     }
-    
+
     public function indexAction()
     {
         return;
-    }    
-    
+    }
+
     public function setResponse($content)
     {
         $this->_response = $content;
     }
-    
+
     public function setHeader($params)
     {
         if (! headers_sent()) {
@@ -157,19 +157,19 @@ abstract class Controller
         }
         return $this;
     }
-    
+
     public function setModel($namespace)
     {
         $this->_defaultModel = $namespace;
         return $this;
     }
-    
+
     public function setSession($key, $value)
     {
         $_SESSION[$key] = $value;
         return $this;
     }
-    
+
     public function setCookie($key, $value, $seconds = 3600)
     {
         $this->_cookies[$key] = $value;
@@ -177,70 +177,70 @@ abstract class Controller
             setcookie($key, $value, time() + $seconds);
             return $this;
         }
-    }    
-    
+    }
+
     public function getRequest($param = null, $default = null)
     {
         if ($param) {
-            return isset($this->_request[$param]) ? 
+            return isset($this->_request[$param]) ?
                 $this->_request[$param] : $default;
         }
         return $this->_request;
     }
-    
+
     public function getQuery($param = null, $default = null)
     {
         if ($param) {
-            return isset($this->_query[$param]) ? 
+            return isset($this->_query[$param]) ?
                 $this->_query[$param] : $default;
         }
-        return $this->_query;    
+        return $this->_query;
     }
-    
+
     public function getPost($param = null, $default = null)
     {
         if ($param) {
-            return isset($this->_post[$param]) ? 
+            return isset($this->_post[$param]) ?
                 $this->_post[$param] : $default;
         }
         return $this->_post;
     }
-    
+
     public function getServer($param = null, $default = null)
     {
         if ($param) {
-            return isset($this->_server[$param]) ? 
+            return isset($this->_server[$param]) ?
                 $this->_server[$param] : $default;
         }
         return $this->_server;
     }
-    
+
     public function getSession($param = null, $default = null)
     {
         if ($param) {
-            return isset($this->_session[$param]) ? 
+            return isset($this->_session[$param]) ?
                 $this->_session[$param] : $default;
         }
         return $this->_session;
     }
-    
+
     public function getCookie($param = null, $default = null)
     {
         if ($param) {
-            return isset($this->_cookies[$param]) ? 
+            return isset($this->_cookies[$param]) ?
                 $this->_cookies[$param] : $default;
         }
         return $this->_cookies;
-    }    
-    
-    public function getModel() 
+    }
+
+    public function getModel()
     {
         if ($this->_defaultModel && class_exists($this->_defaultModel)) {
             return new $this->_defaultModel;
         }
     }
-    
-    public function sanitize($string, $quotes = ENT_QUOTES, $charset = 'utf-8') 
+
+    public function sanitize($string, $quotes = ENT_QUOTES, $charset = 'utf-8')
     {
         return htmlentities($string, $quotes, $charset);
     }
@@ -256,35 +256,35 @@ namespace SPA_Chat;
 use SPA_Common;
 class Model extends SPA_Common\Model
 {
-    
+
     public function getMessages($limit = CHAT_HISTORY, $reverse = true)
     {
-        $response = $this->db->query("SELECT * FROM messages 
+        $response = $this->db->query("SELECT * FROM messages
             ORDER BY date DESC LIMIT {$limit}");
         return $response->getResults();
     }
-    
+
     public function addMessage($username, $message, $ip)
     {
         $username = addslashes($username);
         $message = addslashes($message);
-        return (bool) $this->db->query("INSERT INTO messages 
+        return (bool) $this->db->query("INSERT INTO messages
             VALUES (NULL, '{$username}', '{$message}', '{$ip}', NOW())");
     }
-    
+
     public function removeMessages()
     {
         return (bool) $this->db->query("TRUNCATE TABLE messages");
-    }    
-    
+    }
+
     public function removeOldMessages($limit = CHAT_HISTORY)
     {
         return false;
-        return (bool) $this->db->query("DELETE FROM messages 
-            WHERE id NOT IN (SELECT id FROM messages 
+        return (bool) $this->db->query("DELETE FROM messages
+            WHERE id NOT IN (SELECT id FROM messages
                 ORDER BY date DESC LIMIT {$limit})");
     }
-    
+
     public function getOnline($count = true, $timeRange = CHAT_ONLINE_RANGE)
     {
         if ($count) {
@@ -293,42 +293,42 @@ class Model extends SPA_Common\Model
         }
         return $this->db->query("SELECT ip FROM online")->getResults();
     }
-    
+
     public function updateOnline($hash, $ip)
     {
         return (bool) $this->db->query("REPLACE INTO online
             VALUES ('{$hash}', '{$ip}', NOW())") or die(mysql_error());
     }
-    
+
     public function clearOffline($timeRange = CHAT_ONLINE_RANGE)
     {
         return (bool) $this->db->query("DELETE FROM online
             WHERE last_update <= (NOW() - INTERVAL {$timeRange} MINUTE)");
     }
-    
+
     public function __destruct()
     {
         if ($this->db) {
             $this->db->disconnect();
         }
     }
-    
+
 }
 
 class Controller extends SPA_Common\Controller
 {
     protected $_model;
-    
+
     public function __construct()
     {
         $this->setModel('SPA_Chat\Model');
         parent::__construct();
     }
-    
+
     public function indexAction()
     {
     }
-    
+
     public function listAction()
     {
         $this->setHeader(array('Content-Type' => 'application/json'));
@@ -340,21 +340,21 @@ class Controller extends SPA_Common\Controller
         }
         return json_encode($messages);
     }
-    
+
     public function saveAction()
     {
         $username = $this->getPost('username');
         $message = $this->getPost('message');
         $ip = $this->getServer('REMOTE_ADDR');
         $this->setCookie('username', $username, 9999 * 9999);
-        
+
         $isAdmin = preg_match('/^'.ADMIN_USERNAME_PREFIX.'/', $username);
         $trowCmd = false;
         if ($isAdmin) {
             $username = preg_replace('/^'.ADMIN_USERNAME_PREFIX.'/', '', $username);
             $trowCmd = $this->_parseAdminCommand($message);
         }
-        
+
         $result = array('success' => false);
         if ($username && $message && $ip && !$trowCmd) {
             $result = array(
@@ -364,7 +364,7 @@ class Controller extends SPA_Common\Controller
         $this->setHeader(array('Content-Type' => 'application/json'));
         return json_encode($result);
     }
-    
+
     private function _parseAdminCommand($message, $username)
     {
         if ($message == '/clear') {
@@ -380,11 +380,11 @@ class Controller extends SPA_Common\Controller
             $message = 'Online: ' . implode(", ", $ipArr);
             $this->getModel()->addMessage('Admin', $message, '0.0.0.0');
             return true;
-        }   
-        
+        }
+
         return false;
     }
-    
+
     public function pingAction()
     {
         $ip = $this->getServer('REMOTE_ADDR');
@@ -394,13 +394,13 @@ class Controller extends SPA_Common\Controller
         $unique .= $this->getServer('HTTP_COOKIE');
 
         $hash = md5($unique);
-        
+
         $this->getModel()->updateOnline($hash, $ip);
         $this->getModel()->clearOffline();
         $this->getModel()->removeOldMessages();
-        
+
         $onlines = $this->getModel()->getOnline();
-        
+
         $this->setHeader(array('Content-Type' => 'application/json'));
         return json_encode($onlines);
     }
@@ -412,7 +412,7 @@ $chatApp = new Controller(); ?><!doctype html>
     <meta charset="utf-8">
     <title>SPA Chat - Simple PHP Ajax Chat</title>
     <meta name="author" content="Joni2Back - Jonas Sciangula Street - joni2back {{at}} gmail {{dot}} com">
-    
+
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
@@ -420,7 +420,7 @@ $chatApp = new Controller(); ?><!doctype html>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
-    <!-- Latest compiled and minified JavaScript -->        
+    <!-- Latest compiled and minified JavaScript -->
 </head>
 <script type="text/javascript">
 (function() {
@@ -450,6 +450,7 @@ $chatApp = new Controller(); ?><!doctype html>
 
         $scope.messages = [];
         $scope.online = null;
+        $scope.messagesHistoryLength = 0;
 
         $scope.me = {
             username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
@@ -462,8 +463,8 @@ $chatApp = new Controller(); ?><!doctype html>
             if (! ($scope.me.username && $scope.me.username.trim())) {
                 return $scope.openModal();
             }
-            
-            if (! ($scope.me.message && $scope.me.message.trim() && 
+
+            if (! ($scope.me.message && $scope.me.message.trim() &&
                    $scope.me.username && $scope.me.username.trim())) {
                 return;
             }
@@ -474,7 +475,7 @@ $chatApp = new Controller(); ?><!doctype html>
                 data: data,
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'}
             }).success(function(data) {
-                $scope.listMessages();
+                $scope.listMessages(true);
             });
         };
 
@@ -485,7 +486,7 @@ $chatApp = new Controller(); ?><!doctype html>
             return msg;
         };
 
-        $scope.listMessages = function() {
+        $scope.listMessages = function(preventAudio) {
             return $http.get($scope.urlListMessages, {}).success(function(data) {
                 $scope.messages = [];
                 angular.forEach(data, function(message) {
@@ -493,9 +494,13 @@ $chatApp = new Controller(); ?><!doctype html>
                     $scope.messages.push(message);
                 });
                 $scope.scrollDown();
+                if ($scope.messagesHistoryLength !== $scope.messages.length) {
+                    !preventAudio && $scope.playAudio();
+                }
+                $scope.messagesHistoryLength = $scope.messages.length;
             });
         };
-        
+
         $scope.pingServer = function(msgItem) {
             return $http.get($scope.urlListOnlines, {}).success(function(data) {
                 $scope.online = data;
@@ -504,13 +509,13 @@ $chatApp = new Controller(); ?><!doctype html>
 
         $scope.init = function() {
             $scope.listMessages();
-            $scope.pidMessages = window.setTimeout($scope.listMessages, 2000);
-            $scope.pidPingServer = window.setTimeout($scope.pingServer, 8000);
+            $scope.pidMessages = window.setInterval($scope.listMessages, 2000);
+            $scope.pidPingServer = window.setInterval($scope.pingServer, 8000);
         };
 
         $scope.scrollDown = function() {
             var pidScroll;
-            pidScroll = window.setTimeout(function() {
+            pidScroll = window.setInterval(function() {
                 $('.direct-chat-messages').scrollTop(9999);
                 window.clearInterval(pidScroll);
             }, 100);
@@ -518,6 +523,10 @@ $chatApp = new Controller(); ?><!doctype html>
 
         $scope.openModal = function() {
             $('#choose-name').modal('show');
+        };
+
+        $scope.playAudio = function() {
+            new Audio('beep.ogg').play();
         };
 
         $scope.init();
@@ -637,7 +646,7 @@ input,.alert,button {
                         </div>
                         <img class="direct-chat-img" src="http://upload.wikimedia.org/wikipedia/en/e/ee/Unknown-person.gif" alt="">
                         <div class="direct-chat-text">
-                            <span ng-bind-html="message.message">{{ message.message }}</span>
+                            <span>{{ message.message }}</span>
                         </div>
                     </div>
                 </div>
