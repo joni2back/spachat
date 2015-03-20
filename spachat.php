@@ -12,7 +12,7 @@ namespace SPA_Common;
 define('DB_USERNAME',       'root');
 define('DB_PASSWORD',       'root');
 define('DB_HOST',           'localhost');
-define('DB_NAME',           'chatangular');
+define('DB_NAME',           'chat');
 define('CHAT_HISTORY',      '70');
 define('CHAT_ONLINE_RANGE', '1');
 define('ADMIN_USERNAME_PREFIX', 'adm123_');
@@ -336,6 +336,7 @@ class Controller extends SPA_Common\Controller
         foreach($messages as &$message) {
             $message->username = $this->sanitize($message->username);
             $message->message = $this->sanitize($message->message);
+            $message->me = $this->getServer('REMOTE_ADDR') === $message->ip;
         }
         return json_encode($messages);
     }
@@ -449,17 +450,23 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
     $scope.messages = [];
     $scope.online = null;
 
-    $scope.user = {
-        username: null,
+    $scope.me = {
+        username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
         message: null
     };
 
     $scope.saveMessage = function(form, callback) {
-        var data = $.param($scope.user);
-        if (! ($scope.user.message.trim() && $scope.user.username.trim())) {
+        var data = $.param($scope.me);
+
+        if (! ($scope.me.username && $scope.me.username.trim())) {
+            return $scope.openModal();
+        }
+        
+        if (! ($scope.me.message && $scope.me.message.trim() && 
+               $scope.me.username && $scope.me.username.trim())) {
             return;
         }
-        $scope.user.message = '';
+        $scope.me.message = '';
         return $http({
             method: 'POST',
             url: $scope.urlSaveMessage,
@@ -467,7 +474,6 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}
         }).success(function(data) {
             $scope.listMessages();
-            $scope.scrollDown();
         });
     };
 
@@ -484,10 +490,11 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
             angular.forEach(data, function(message) {
                 $scope.messages.push(message);
             });
+            $scope.scrollDown();
         });
     };
     
-    this.pingServer = function(msgItem) {
+    $scope.pingServer = function(msgItem) {
         return $http.get($scope.urlListOnlines, {}).success(function(data) {
             $scope.online = data;
         });
@@ -500,85 +507,189 @@ ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
     };
 
     $scope.init = function() {
-        $scope.pidMessages = window.setInterval($scope.listMessages, 2000);
-        $scope.pidPingServer = window.setInterval($scope.pingServer, 8000);
+        $scope.listMessages();
+        $scope.pidMessages = window.setTimeout($scope.listMessages, 2000);
+        $scope.pidPingServer = window.setTimeout($scope.pingServer, 8000);
     };
 
     $scope.scrollDown = function() {
-        $('.messages').scrollTop(9999);
+        var pidScroll;
+        pidScroll = window.setTimeout(function() {
+            $('.direct-chat-messages').scrollTop(9999);
+            window.clearInterval(pidScroll);
+        }, 100);
+    };
+
+    $scope.openModal = function() {
+        $('#choose-name').modal('show');
     };
 
     $scope.init();
 }]);
 
-
-
-
-$(function() {
-    
-    $('text').on('keydown', function(e) {
-        if (e.which == 13 || e.keyCode == 13) {
-            e.preventDefault();
-            form.submit();
-        }
-    }).focus();
-    
-});
 </script>
 <style>
-
-    .messages {
-        height:500px;
-        overflow:hidden;
-        overflow-y:scroll;
-    }
-    .messages .well {
-        margin-right:10px;
-        margin-bottom:10px;
-    }
-    .messages .well img {
-        max-height:150px;
-        margin:-6px 3px 0 3px;
-    }
+.direct-chat-text {
+    border-radius:5px;
+    position:relative;
+    padding:5px 10px;
+    background:#D2D6DE;
+    border:1px solid #D2D6DE;
+    margin:5px 0 0 50px;
+    color:#444;
+}
+.direct-chat-msg,.direct-chat-text {
+    display:block;
+}
+.direct-chat-img {
+    border-radius:50%;
+    float:left;
+    width:40px;
+    height:40px;
+}
+.direct-chat-info {
+    display:block;
+    margin-bottom:2px;
+    font-size:12px;
+}
+.direct-chat-msg {
+    margin-bottom:10px;
+}
+.direct-chat-messages,.direct-chat-contacts {
+    -webkit-transition:-webkit-transform .5s ease-in-out;
+    -moz-transition:-moz-transform .5s ease-in-out;
+    -o-transition:-o-transform .5s ease-in-out;
+    transition:transform .5s ease-in-out;
+}
+.direct-chat-messages {
+    -webkit-transform:translate(0,0);
+    -ms-transform:translate(0,0);
+    -o-transform:translate(0,0);
+    transform:translate(0,0);
+    padding:10px;
+    height:400px;
+    overflow:auto;
+}
+.direct-chat-text:before {
+    border-width:6px;
+    margin-top:-6px;
+}
+.direct-chat-text:after {
+    border-width:5px;
+    margin-top:-5px;
+}
+.direct-chat-text:after,.direct-chat-text:before {
+    position:absolute;
+    right:100%;
+    top:15px;
+    border:solid rgba(0,0,0,0);
+    border-right-color:#D2D6DE;
+    content:' ';
+    height:0;
+    width:0;
+    pointer-events:none;
+}
+.direct-chat-warning .right>.direct-chat-text {
+    background:#F39C12;
+    border-color:#F39C12;
+    color:#FFF;
+}
+.right .direct-chat-text {
+    margin-right:50px;
+    margin-left:0;
+}
+.direct-chat-warning .right>.direct-chat-text:after,.direct-chat-warning .right>.direct-chat-text:before {
+    border-left-color:#F39C12;
+}
+.right .direct-chat-text:after,.right .direct-chat-text:before {
+    right:auto;
+    left:100%;
+    border-right-color:rgba(0,0,0,0);
+    border-left-color:#D2D6DE;
+}
+.right .direct-chat-img {
+    float:right;
+}
+.box-footer {
+    border-top-left-radius:0;
+    border-top-right-radius:0;
+    border-bottom-right-radius:3px;
+    border-bottom-left-radius:3px;
+    border-top:1px solid #F4F4F4;
+    padding:10px 0;
+    background-color:#FFF;
+}
+.direct-chat-name {
+    font-weight:600;
+}
+.box-footer form {
+    margin-bottom:10px;
+}
+input,.alert,button {
+    border-radius: 0!important;
+}
 </style>
-<body class="spa-chat container-fluid" data-ng-controller="ChatAppCtrl">
-    <header>
-        <h3>cct {{urlListOnlines}}</h3>
-        <h4>Online users: <span id="spa-online"></span></h4>
-    </header>
-    <section>
-      <div class="row">
-        <div class="col-md-12">
-          <div class="well messages well-sm">
-              <div data-ng-repeat="message in messages" class="well">
-                  <b>{{ message.username }}:</b> {{ message.message }}
-              </div>
-          </div>
-        </div>  
-        <div class="row">
-            <div class="col-md-12">
-                <form>
-                    <fieldset>
-                        <div class="input-prepend">
-                            <span class="add-on">#</span>
-                            <input type="text" ng-model="user.username" placeholder="Username" value="<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>" />
+<body data-ng-controller="ChatAppCtrl">
+    <div class="container">
+        <header>
+            <h4>Online users: {{ online.total || '1' }}</h4>
+        </header>
+        <div class="box box-warning direct-chat direct-chat-warning">
+            <div class="box-body">
+                <div class="direct-chat-messages">
+                    <div class="direct-chat-msg" data-ng-repeat="message in messages" ng-class="{'xx':message.me, 'right':!message.me}">
+                        <div class="direct-chat-info clearfix">
+                            <span class="direct-chat-name" ng-class="{'pull-left':message.me, 'pull-right':!message.me}">{{ message.username }}</span>
+                            <span class="direct-chat-timestamp " ng-class="{'pull-left':!message.me, 'pull-right':message.me}">{{ message.date }}</span>
                         </div>
-                        <div>
-                            <textarea ng-model="user.message" ng-enter="saveMessage()"></textarea>
-                        </div>                 
-                        <button class="btn btn-info" ng-click="saveMessage()">Send</button>
-                    </fieldset>
-                    <div>
-                        <h5>You can use shortcodes</h5>
-                        <ul>
-                            <li>[img]http://image.url[/img]</li>
-                            <li>[url]http://url.link/[/url]</li>
-                        </ul>
+                        <img class="direct-chat-img" src="http://upload.wikimedia.org/wikipedia/en/e/ee/Unknown-person.gif" alt="">
+                        <div class="direct-chat-text">
+                            {{ message.message }}
+                        </div>
+                    </div>
+                </div>
+                <div class="box-footer">
+                    <form ng-submit="saveMessage()">
+                        <div class="input-group">
+                            <input type="text" placeholder="Type message..." autofocus="autofocus" class="form-control" ng-model="me.message" ng-enter="saveMessage()">
+                            <span class="input-group-btn">
+                            <button type="submit" class="btn btn-warning btn-flat">Send</button>
+                            </span>
+                        </div>
+                    </form>
+                    <div class="alert alert-info">
+                        <a class="badge" href="" data-toggle="modal" data-target="#choose-name">Change username </a>
+                        <span class="pull-right">Use shortcodes <span class="badge">[img]http://image.url[/img]</span>
+                        <span class="badge">[url]http://url.link/[/url]</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal animated fadeIn" id="choose-name">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form data-ng-submit="rename(temp)">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span>
+                            <span class="sr-only">Close</span>
+                        </button>
+                        <h4 class="modal-title">Choose nickname</h4>
+                    </div>
+                    <div class="modal-body">
+                        <label class="radio">Enter your username</label>
+                        <input class="form-control" data-ng-model="me.username" autofocus="autofocus">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">Close</button>
                     </div>
                 </form>
             </div>
         </div>
-      </div>
-    </section>
+    </div>
+
 </body>
 </html>
