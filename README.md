@@ -1,37 +1,30 @@
-SPAChat (Simple PHP Ajax Chat)
+SPAChat (Simple PHP Angular Ajax Chat)
 =======
 
-Version: 1.1
-Author: [Jonas Sciangula Street](http://www.joni2back.com/) <joni2back {{ at }} gmail {{.}} com>
+This project is a refactor of [Joni2Back MySQL Ajax Chat](http://sourceforge.net/projects/joni2back-chat/),
+now as "SPAChat - Simple PHP Angular Ajax Chat".
 
+This mini chat was developed with a simple backend MVC architecture and every piece of code in the same file.
 
-#### Requires:
-* PHP 5.3
-* MySQL 4 | 5
+#### Uses:
+* AngularJS
+* jQuery
+* PHP >= 5.3
+* mySQL
 
+#### Some of the features that I think could be useful:
 
-This project is a refactor of [Joni2Back MySQL Ajax Chat](http://sourceforge.net/projects/joni2back-chat/), 
-now called "SPAChat - Simple PHP Ajax Chat".
-
-This lite chat app is developed with a simple MVC architecture.
-
-#### Here are some of the features that I think could be useful: 
-
-* Customizable chat history items number
 * Shortcodes to send links and images
-* Show online users (not only per IP)
+* Online users count (fingerprinting detection)
 * Admin user (with a secret nickname prefix)
 * List online clients IP (By admin command)
 * Clear the chat history (By admin command)
-* jQuery integration
-* JSON Responses
-    
-    
-#### Nice to have (@todo):
+* JSON API
 
-* Some other features for admin user
-* Extend the shortcodes features in orden to allow font styles, etc
+#### TODO:
+
+* New admin user features
+* New shortcodes features in orden to allow font styles, etc
 * Audio notifications
 * Auto remove old chat history items
-    
-    
+* Message indicator in the browser tab title
