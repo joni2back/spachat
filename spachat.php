@@ -423,110 +423,106 @@ $chatApp = new Controller(); ?><!doctype html>
     <!-- Latest compiled and minified JavaScript -->        
 </head>
 <script type="text/javascript">
+(function() {
+    var ChatApp = angular.module('ChatApp', []);
 
-var ChatApp = angular.module('ChatApp', []);
-
-ChatApp.directive('ngEnter', function () {
-    return function (scope, element, attrs) {
-        element.bind("keydown keypress", function (event) {
-            if (event.which === 13) {
-                scope.$apply(function (){
-                    scope.$eval(attrs.ngEnter);
-                });
-                event.preventDefault();
-            }
-        });
-    };
-});
-ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
-
-    $scope.urlListMessages = '?action=list';
-    $scope.urlSaveMessage = '?action=save';
-    $scope.urlListOnlines = '?action=ping';
-
-    $scope.pidMessages = null;
-    $scope.pidPingServer = null;
-
-    $scope.messages = [];
-    $scope.online = null;
-
-    $scope.me = {
-        username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
-        message: null
-    };
-
-    $scope.saveMessage = function(form, callback) {
-        var data = $.param($scope.me);
-
-        if (! ($scope.me.username && $scope.me.username.trim())) {
-            return $scope.openModal();
-        }
-        
-        if (! ($scope.me.message && $scope.me.message.trim() && 
-               $scope.me.username && $scope.me.username.trim())) {
-            return;
-        }
-        $scope.me.message = '';
-        return $http({
-            method: 'POST',
-            url: $scope.urlSaveMessage,
-            data: data,
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
-        }).success(function(data) {
-            $scope.listMessages();
-        });
-    };
-
-    $scope.replaceShortcodes = function(message) {
-        var msg = '';
-        msg = message.toString().replace(/(\[img])(.*)(\[\/img])/, "<img src='$2' />");
-        msg = msg.toString().replace(/(\[url])(.*)(\[\/url])/, "<a href='$2'>$2</a>");
-        return msg;
-    };
-
-    $scope.listMessages = function() {
-        return $http.get($scope.urlListMessages, {}).success(function(data) {
-            $scope.messages = [];
-            angular.forEach(data, function(message) {
-                $scope.messages.push(message);
+    ChatApp.directive('ngEnter', function () {
+        return function (scope, element, attrs) {
+            element.bind("keydown keypress", function (event) {
+                if (event.which === 13) {
+                    scope.$apply(function (){
+                        scope.$eval(attrs.ngEnter);
+                    });
+                    event.preventDefault();
+                }
             });
-            $scope.scrollDown();
-        });
-    };
-    
-    $scope.pingServer = function(msgItem) {
-        return $http.get($scope.urlListOnlines, {}).success(function(data) {
-            $scope.online = data;
-        });
-    };
+        };
+    });
 
-    $scope.timeAdapter = function(datetime) {
-        var t = (datetime).split(/[- :]/);
-        var d = new Date(t[0], t[1]-1, t[2], t[3], t[4], t[5]);
-        return d.toTimeString().substr(0, 8);
-    };
+    ChatApp.controller('ChatAppCtrl', ['$scope', '$http', function($scope, $http) {
 
-    $scope.init = function() {
-        $scope.listMessages();
-        $scope.pidMessages = window.setTimeout($scope.listMessages, 2000);
-        $scope.pidPingServer = window.setTimeout($scope.pingServer, 8000);
-    };
+        $scope.urlListMessages = '?action=list';
+        $scope.urlSaveMessage = '?action=save';
+        $scope.urlListOnlines = '?action=ping';
 
-    $scope.scrollDown = function() {
-        var pidScroll;
-        pidScroll = window.setTimeout(function() {
-            $('.direct-chat-messages').scrollTop(9999);
-            window.clearInterval(pidScroll);
-        }, 100);
-    };
+        $scope.pidMessages = null;
+        $scope.pidPingServer = null;
 
-    $scope.openModal = function() {
-        $('#choose-name').modal('show');
-    };
+        $scope.messages = [];
+        $scope.online = null;
 
-    $scope.init();
-}]);
+        $scope.me = {
+            username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
+            message: null
+        };
 
+        $scope.saveMessage = function(form, callback) {
+            var data = $.param($scope.me);
+
+            if (! ($scope.me.username && $scope.me.username.trim())) {
+                return $scope.openModal();
+            }
+            
+            if (! ($scope.me.message && $scope.me.message.trim() && 
+                   $scope.me.username && $scope.me.username.trim())) {
+                return;
+            }
+            $scope.me.message = '';
+            return $http({
+                method: 'POST',
+                url: $scope.urlSaveMessage,
+                data: data,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            }).success(function(data) {
+                $scope.listMessages();
+            });
+        };
+
+        $scope.replaceShortcodes = function(message) {
+            var msg = '';
+            msg = message.toString().replace(/(\[img])(.*)(\[\/img])/, "<img src='$2' />");
+            msg = msg.toString().replace(/(\[url])(.*)(\[\/url])/, "<a href='$2'>$2</a>");
+            return msg;
+        };
+
+        $scope.listMessages = function() {
+            return $http.get($scope.urlListMessages, {}).success(function(data) {
+                $scope.messages = [];
+                angular.forEach(data, function(message) {
+                    message.message = $scope.replaceShortcodes(message.message);
+                    $scope.messages.push(message);
+                });
+                $scope.scrollDown();
+            });
+        };
+        
+        $scope.pingServer = function(msgItem) {
+            return $http.get($scope.urlListOnlines, {}).success(function(data) {
+                $scope.online = data;
+            });
+        };
+
+        $scope.init = function() {
+            $scope.listMessages();
+            $scope.pidMessages = window.setTimeout($scope.listMessages, 2000);
+            $scope.pidPingServer = window.setTimeout($scope.pingServer, 8000);
+        };
+
+        $scope.scrollDown = function() {
+            var pidScroll;
+            pidScroll = window.setTimeout(function() {
+                $('.direct-chat-messages').scrollTop(9999);
+                window.clearInterval(pidScroll);
+            }, 100);
+        };
+
+        $scope.openModal = function() {
+            $('#choose-name').modal('show');
+        };
+
+        $scope.init();
+    }]);
+})();
 </script>
 <style>
 .direct-chat-text {
@@ -631,9 +627,6 @@ input,.alert,button {
 </style>
 <body data-ng-controller="ChatAppCtrl">
     <div class="container">
-        <header>
-            <h4>Online users: {{ online.total || '1' }}</h4>
-        </header>
         <div class="box box-warning direct-chat direct-chat-warning">
             <div class="box-body">
                 <div class="direct-chat-messages">
@@ -644,7 +637,7 @@ input,.alert,button {
                         </div>
                         <img class="direct-chat-img" src="http://upload.wikimedia.org/wikipedia/en/e/ee/Unknown-person.gif" alt="">
                         <div class="direct-chat-text">
-                            {{ message.message }}
+                            <span ng-bind-html="message.message">{{ message.message }}</span>
                         </div>
                     </div>
                 </div>
@@ -657,10 +650,13 @@ input,.alert,button {
                             </span>
                         </div>
                     </form>
-                    <div class="alert alert-info">
-                        <a class="badge" href="" data-toggle="modal" data-target="#choose-name">Change username </a>
+                    <div class="clearfix">
+                        <span class="badge pull-left">Online users: {{ online.total || '1' }}</span>
+                        <a class="badge pull-right" href="" data-toggle="modal" data-target="#choose-name">Change username</a>
+                        <!--
                         <span class="pull-right">Use shortcodes <span class="badge">[img]http://image.url[/img]</span>
                         <span class="badge">[url]http://url.link/[/url]</span>
+                        -->
                         </span>
                     </div>
                 </div>
