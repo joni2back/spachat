@@ -1,7 +1,7 @@
 <?php
 
 /**
- * SPA Chat - Simple PHP Ajax Chat
+ * SPAChat - Simple PHP Angular Ajax Chat
  *
  * @date    2013-05-31
  * @author  Jonas Sciangula Street <joni2back {at} gmail.com>
@@ -410,7 +410,7 @@ $chatApp = new Controller(); ?><!doctype html>
 <html data-ng-app="ChatApp">
 <head>
     <meta charset="utf-8">
-    <title>SPA Chat - Simple PHP Ajax Chat</title>
+    <title>Simple PHP Angular Ajax Chat</title>
     <meta name="author" content="Joni2Back - Jonas Sciangula Street - joni2back {{at}} gmail {{dot}} com">
 
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
@@ -493,9 +493,9 @@ $chatApp = new Controller(); ?><!doctype html>
                     message.message = $scope.replaceShortcodes(message.message);
                     $scope.messages.push(message);
                 });
-                $scope.scrollDown();
                 if ($scope.messagesHistoryLength !== $scope.messages.length) {
                     !preventAudio && $scope.playAudio();
+                    $scope.scrollDown();
                 }
                 $scope.messagesHistoryLength = $scope.messages.length;
             });
@@ -636,6 +636,7 @@ input,.alert,button {
 </style>
 <body data-ng-controller="ChatAppCtrl">
     <div class="container">
+        <h3>https://github.com/joni2back/spachat</h3>
         <div class="box box-warning direct-chat direct-chat-warning">
             <div class="box-body">
                 <div class="direct-chat-messages">
