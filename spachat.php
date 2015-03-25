@@ -259,8 +259,8 @@ class Model extends SPA_Common\Model
 
     public function getMessages($limit = CHAT_HISTORY, $reverse = true)
     {
-        $response = $this->db->query("SELECT * FROM messages
-            ORDER BY date DESC LIMIT {$limit}");
+        $response = $this->db->query("(SELECT * FROM messages
+            ORDER BY `date` DESC LIMIT {$limit}) ORDER BY `date` ASC");
         return $response->getResults();
     }
 
@@ -332,10 +332,10 @@ class Controller extends SPA_Common\Controller
     public function listAction()
     {
         $this->setHeader(array('Content-Type' => 'application/json'));
-        $messages = array_reverse($this->getModel()->getMessages());
+        $messages = $this->getModel()->getMessages();
         foreach($messages as &$message) {
-            $message->username = $this->sanitize($message->username);
-            $message->message = $this->sanitize($message->message);
+            //$message->username = $this->sanitize($message->username);
+            //$message->message = $this->sanitize($message->message);
             $message->me = $this->getServer('REMOTE_ADDR') === $message->ip;
         }
         return json_encode($messages);
