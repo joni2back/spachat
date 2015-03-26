@@ -6,6 +6,8 @@ now as "SPAChat - Simple PHP Angular Ajax Chat".
 
 This mini chat was developed with a simple backend MVC architecture and every piece of code in the same file.
 
+#### [Try the DEMO](http://zendelsolutions.com/zendel/projects/spachat)
+-----
 ![alt tag](https://raw.githubusercontent.com/joni2back/spachat/master/spachat.png)
 
 #### Uses:
