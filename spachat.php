@@ -13,7 +13,7 @@ define('DB_USERNAME',       'root');
 define('DB_PASSWORD',       'root');
 define('DB_HOST',           'localhost');
 define('DB_NAME',           'chat');
-define('CHAT_HISTORY',      '70');
+define('CHAT_HISTORY',      '150');
 define('CHAT_ONLINE_RANGE', '1');
 define('ADMIN_USERNAME_PREFIX', 'adm123_');
 
@@ -268,6 +268,7 @@ class Model extends SPA_Common\Model
     {
         $username = addslashes($username);
         $message = addslashes($message);
+
         return (bool) $this->db->query("INSERT INTO messages
             VALUES (NULL, '{$username}', '{$message}', '{$ip}', NOW())");
     }
@@ -390,6 +391,7 @@ class Controller extends SPA_Common\Controller
         $ip = $this->getServer('REMOTE_ADDR');
         $unique  = $ip;
         $unique .= $this->getServer('HTTP_USER_AGENT');
+        $unique .= $this->getServer('HTTP_ACCEPT');
         $unique .= $this->getServer('HTTP_ACCEPT_LANGUAGE');
         $unique .= $this->getServer('HTTP_COOKIE');
 
@@ -450,7 +452,7 @@ $chatApp = new Controller(); ?><!doctype html>
 
         $scope.messages = [];
         $scope.online = null;
-        $scope.messagesHistoryLength = 0;
+        $scope.lastMessageId = null;
 
         $scope.me = {
             username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
@@ -493,11 +495,12 @@ $chatApp = new Controller(); ?><!doctype html>
                     message.message = $scope.replaceShortcodes(message.message);
                     $scope.messages.push(message);
                 });
-                if ($scope.messagesHistoryLength !== $scope.messages.length) {
+                var lastMessageId = $scope.messages[$scope.messages.length - 1].id
+                if ($scope.lastMessageId !== lastMessageId) {
                     !preventAudio && $scope.playAudio();
                     $scope.scrollDown();
                 }
-                $scope.messagesHistoryLength = $scope.messages.length;
+                $scope.lastMessageId = lastMessageId;
             });
         };
 
@@ -516,7 +519,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.scrollDown = function() {
             var pidScroll;
             pidScroll = window.setInterval(function() {
-                $('.direct-chat-messages').scrollTop(9999);
+                $('.direct-chat-messages').scrollTop(Number.MAX_SAFE_INTEGER);
                 window.clearInterval(pidScroll);
             }, 100);
         };
@@ -545,6 +548,7 @@ $chatApp = new Controller(); ?><!doctype html>
 }
 .direct-chat-msg,.direct-chat-text {
     display:block;
+    word-wrap: break-word;
 }
 .direct-chat-img {
     border-radius:50%;
@@ -574,6 +578,7 @@ $chatApp = new Controller(); ?><!doctype html>
     padding:10px;
     height:400px;
     overflow:auto;
+    word-wrap: break-word;
 }
 .direct-chat-text:before {
     border-width:6px;
