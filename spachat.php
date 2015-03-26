@@ -391,9 +391,7 @@ class Controller extends SPA_Common\Controller
         $ip = $this->getServer('REMOTE_ADDR');
         $unique  = $ip;
         $unique .= $this->getServer('HTTP_USER_AGENT');
-        $unique .= $this->getServer('HTTP_ACCEPT');
         $unique .= $this->getServer('HTTP_ACCEPT_LANGUAGE');
-        $unique .= $this->getServer('HTTP_COOKIE');
 
         $hash = md5($unique);
 
@@ -409,7 +407,7 @@ class Controller extends SPA_Common\Controller
 }
 
 $chatApp = new Controller(); ?><!doctype html>
-<html data-ng-app="ChatApp">
+<html ng-app="ChatApp">
 <head>
     <meta charset="utf-8">
     <title>Simple PHP Angular Ajax Chat</title>
@@ -419,10 +417,8 @@ $chatApp = new Controller(); ?><!doctype html>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
-    <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
-    <!-- Latest compiled and minified JavaScript -->
 </head>
 <script type="text/javascript">
 (function() {
@@ -495,7 +491,10 @@ $chatApp = new Controller(); ?><!doctype html>
                     message.message = $scope.replaceShortcodes(message.message);
                     $scope.messages.push(message);
                 });
-                var lastMessageId = $scope.messages[$scope.messages.length - 1].id
+
+                var lastMessage = $scope.messages[$scope.messages.length - 1];
+                var lastMessageId = lastMessage && lastMessage.id;
+
                 if ($scope.lastMessageId !== lastMessageId) {
                     !preventAudio && $scope.playAudio();
                     $scope.scrollDown();
@@ -608,7 +607,8 @@ $chatApp = new Controller(); ?><!doctype html>
     margin-right:50px;
     margin-left:0;
 }
-.direct-chat-warning .right>.direct-chat-text:after,.direct-chat-warning .right>.direct-chat-text:before {
+.direct-chat-warning .right>.direct-chat-text:after,
+.direct-chat-warning .right>.direct-chat-text:before {
     border-left-color:#F39C12;
 }
 .right .direct-chat-text:after,.right .direct-chat-text:before {
@@ -639,19 +639,19 @@ input,.alert,button {
     border-radius: 0!important;
 }
 </style>
-<body data-ng-controller="ChatAppCtrl">
+<body ng-controller="ChatAppCtrl">
     <div class="container">
         <h3>https://github.com/joni2back/spachat</h3>
         <div class="box box-warning direct-chat direct-chat-warning">
             <div class="box-body">
                 <div class="direct-chat-messages">
-                    <div class="direct-chat-msg" data-ng-repeat="message in messages" ng-class="{'xx':message.me, 'right':!message.me}">
+                    <div class="direct-chat-msg" ng-repeat="message in messages" ng-class="{'right':!message.me}">
                         <div class="direct-chat-info clearfix">
                             <span class="direct-chat-name" ng-class="{'pull-left':message.me, 'pull-right':!message.me}">{{ message.username }}</span>
                             <span class="direct-chat-timestamp " ng-class="{'pull-left':!message.me, 'pull-right':message.me}">{{ message.date }}</span>
                         </div>
                         <img class="direct-chat-img" src="http://upload.wikimedia.org/wikipedia/en/e/ee/Unknown-person.gif" alt="">
-                        <div class="direct-chat-text">
+                        <div class="direct-chat-text right">
                             <span>{{ message.message }}</span>
                         </div>
                     </div>
@@ -679,10 +679,10 @@ input,.alert,button {
         </div>
     </div>
 
-    <div class="modal animated fadeIn" id="choose-name">
+    <div class="modal" id="choose-name">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form data-ng-submit="rename(temp)">
+                <form>
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal">
                             <span aria-hidden="true">&times;</span>
@@ -692,7 +692,7 @@ input,.alert,button {
                     </div>
                     <div class="modal-body">
                         <label class="radio">Enter your username</label>
-                        <input class="form-control" data-ng-model="me.username" autofocus="autofocus">
+                        <input class="form-control" ng-model="me.username" autofocus="autofocus">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">Close</button>
@@ -701,6 +701,8 @@ input,.alert,button {
             </div>
         </div>
     </div>
+
+    <a href="https://github.com/joni2back/spachat"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
 
 </body>
 </html>
