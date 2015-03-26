@@ -29,6 +29,3 @@ This mini chat was developed with a simple backend MVC architecture and every pi
 
 * New admin user features
 * New shortcodes features in orden to allow font styles, etc
-* Audio notifications
-* Auto remove old chat history items
-* Message indicator in the browser tab title
