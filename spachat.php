@@ -347,6 +347,7 @@ class Controller extends SPA_Common\Controller
         $username = $this->getPost('username');
         $message = $this->getPost('message');
         $ip = $this->getServer('REMOTE_ADDR');
+
         $this->setCookie('username', $username, 9999 * 9999);
 
         $isAdmin = preg_match('/^'.ADMIN_USERNAME_PREFIX.'/', $username);
@@ -455,6 +456,29 @@ $chatApp = new Controller(); ?><!doctype html>
             message: null
         };
 
+        $scope.pageTitleNotificator = {
+            vars: {
+                originalTitle: window.document.title,
+                interval: null,
+                status: 0
+            },    
+            on: function(title, intervalSpeed) {
+                var self = this;
+                if (! self.vars.status) {
+                    self.vars.interval = window.setInterval(function() {
+                        window.document.title = (self.vars.originalTitle == window.document.title) ? 
+                        title : self.vars.originalTitle;
+                    },  intervalSpeed || 500);
+                    self.vars.status = 1;
+                }
+            },
+            off: function() {
+                window.clearInterval(this.vars.interval);
+                window.document.title = this.vars.originalTitle;   
+                this.vars.status = 0;
+            }
+        };
+
         $scope.saveMessage = function(form, callback) {
             var data = $.param($scope.me);
 
@@ -484,7 +508,7 @@ $chatApp = new Controller(); ?><!doctype html>
             return msg;
         };
 
-        $scope.listMessages = function(preventAudio) {
+        $scope.listMessages = function(wasListingForMySubmission) {
             return $http.get($scope.urlListMessages, {}).success(function(data) {
                 $scope.messages = [];
                 angular.forEach(data, function(message) {
@@ -496,10 +520,21 @@ $chatApp = new Controller(); ?><!doctype html>
                 var lastMessageId = lastMessage && lastMessage.id;
 
                 if ($scope.lastMessageId !== lastMessageId) {
-                    !preventAudio && $scope.playAudio();
-                    $scope.scrollDown();
+                    $scope.onNewMessage(wasListingForMySubmission);
                 }
                 $scope.lastMessageId = lastMessageId;
+            });
+        };
+
+        $scope.onNewMessage = function(wasListingForMySubmission) {
+            if ($scope.lastMessageId) {
+                !wasListingForMySubmission && $scope.playAudio();
+                !wasListingForMySubmission && $scope.pageTitleNotificator.on('New message');
+            }
+
+            $scope.scrollDown();
+            window.addEventListener('focus', function() {
+                $scope.pageTitleNotificator.off();
             });
         };
 
@@ -518,7 +553,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.scrollDown = function() {
             var pidScroll;
             pidScroll = window.setInterval(function() {
-                $('.direct-chat-messages').scrollTop(Number.MAX_SAFE_INTEGER);
+                $('.direct-chat-messages').scrollTop(window.Number.MAX_SAFE_INTEGER * 0.001);
                 window.clearInterval(pidScroll);
             }, 100);
         };
@@ -702,7 +737,9 @@ input,.alert,button {
         </div>
     </div>
 
-    <a href="https://github.com/joni2back/spachat"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
+    <a href="https://github.com/joni2back/spachat">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub">
+    </a>
 
 </body>
 </html>
