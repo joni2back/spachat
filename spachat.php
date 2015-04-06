@@ -410,7 +410,9 @@ class Controller extends SPA_Common\Controller
 $chatApp = new Controller(); ?><!doctype html>
 <html ng-app="ChatApp">
 <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
+
     <title>Simple PHP Angular Ajax Chat</title>
     <meta name="author" content="Joni2Back - Jonas Sciangula Street - joni2back {{at}} gmail {{dot}} com">
 
@@ -418,8 +420,8 @@ $chatApp = new Controller(); ?><!doctype html>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
 </head>
 <script type="text/javascript">
 (function() {
@@ -546,7 +548,7 @@ $chatApp = new Controller(); ?><!doctype html>
 
         $scope.init = function() {
             $scope.listMessages();
-            $scope.pidMessages = window.setInterval($scope.listMessages, 2000);
+            $scope.pidMessages = window.setInterval($scope.listMessages, 3000);
             $scope.pidPingServer = window.setInterval($scope.pingServer, 8000);
         };
 
@@ -676,7 +678,7 @@ input,.alert,button {
 </style>
 <body ng-controller="ChatAppCtrl">
     <div class="container">
-        <h3>https://github.com/joni2back/spachat</h3>
+        <h4 class="hidden-xs">https://github.com/joni2back/spachat</h4>
         <div class="box box-warning direct-chat direct-chat-warning">
             <div class="box-body">
                 <div class="direct-chat-messages">
