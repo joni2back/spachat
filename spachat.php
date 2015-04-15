@@ -510,6 +510,31 @@ $chatApp = new Controller(); ?><!doctype html>
             return msg;
         };
 
+        $scope.notifyLastMessage = function() {
+            if (typeof window.Notification === 'undefined') {
+                return;
+            }
+            window.Notification.requestPermission(function (permission) {
+                var lastMessage = $scope.getLastMessage();
+                if (permission == 'granted' && lastMessage && lastMessage.username) {
+                    var notify = new window.Notification(lastMessage.username + ' says:', {
+                        body: lastMessage.message
+                    });
+                    notify.onclick = function() {
+                        window.focus();
+                    };
+                    var timmer = setInterval(function() {
+                        notify && notify.close();
+                        typeof timmer !== 'undefined' && window.clearInterval(timmer);
+                    }, 10000);
+                }
+            });
+        };
+
+        $scope.getLastMessage = function() {
+            return $scope.messages[$scope.messages.length - 1];
+        };
+
         $scope.listMessages = function(wasListingForMySubmission) {
             return $http.get($scope.urlListMessages, {}).success(function(data) {
                 $scope.messages = [];
@@ -518,7 +543,7 @@ $chatApp = new Controller(); ?><!doctype html>
                     $scope.messages.push(message);
                 });
 
-                var lastMessage = $scope.messages[$scope.messages.length - 1];
+                var lastMessage = $scope.getLastMessage();
                 var lastMessageId = lastMessage && lastMessage.id;
 
                 if ($scope.lastMessageId !== lastMessageId) {
@@ -529,9 +554,10 @@ $chatApp = new Controller(); ?><!doctype html>
         };
 
         $scope.onNewMessage = function(wasListingForMySubmission) {
-            if ($scope.lastMessageId) {
-                !wasListingForMySubmission && $scope.playAudio();
-                !wasListingForMySubmission && $scope.pageTitleNotificator.on('New message');
+            if ($scope.lastMessageId && !wasListingForMySubmission) {
+                $scope.playAudio();
+                $scope.pageTitleNotificator.on('New message');
+                $scope.notifyLastMessage();
             }
 
             $scope.scrollDown();
