@@ -522,6 +522,9 @@ $chatApp = new Controller(); ?><!doctype html>
                     notify.onclick = function() {
                         window.focus();
                     };
+                    notify.onclose = function() {
+                        $scope.pageTitleNotificator.off();
+                    };
                     var timmer = setInterval(function() {
                         notify && notify.close();
                         typeof timmer !== 'undefined' && window.clearInterval(timmer);
