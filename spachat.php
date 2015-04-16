@@ -347,7 +347,6 @@ class Controller extends SPA_Common\Controller
         $username = $this->getPost('username');
         $message = $this->getPost('message');
         $ip = $this->getServer('REMOTE_ADDR');
-
         $this->setCookie('username', $username, 9999 * 9999);
 
         $isAdmin = preg_match('/^'.ADMIN_USERNAME_PREFIX.'/', $username);
@@ -536,7 +535,7 @@ $chatApp = new Controller(); ?><!doctype html>
         };
 
         $scope.listMessages = function(wasListingForMySubmission) {
-            return $http.get($scope.urlListMessages, {}).success(function(data) {
+            return $http.post($scope.urlListMessages, {}).success(function(data) {
                 $scope.messages = [];
                 angular.forEach(data, function(message) {
                     message.message = $scope.replaceShortcodes(message.message);
@@ -567,7 +566,7 @@ $chatApp = new Controller(); ?><!doctype html>
         };
 
         $scope.pingServer = function(msgItem) {
-            return $http.get($scope.urlListOnlines, {}).success(function(data) {
+            return $http.post($scope.urlListOnlines, {}).success(function(data) {
                 $scope.online = data;
             });
         };
