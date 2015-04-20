@@ -700,7 +700,7 @@ $chatApp = new Controller(); ?><!doctype html>
 .box-footer form {
     margin-bottom:10px;
 }
-input,.alert,button {
+input,button,.alert,.modal-content {
     border-radius: 0!important;
 }
 </style>
