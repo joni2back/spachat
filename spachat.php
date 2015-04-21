@@ -455,6 +455,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.messages = [];
         $scope.online = null;
         $scope.lastMessageId = null;
+        $scope.historyFromId = 0;
 
         $scope.me = {
             username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
@@ -592,6 +593,12 @@ $chatApp = new Controller(); ?><!doctype html>
             }, 100);
         };
 
+        $scope.clearHistory = function() {
+            var lastMessage = $scope.getLastMessage();
+            var lastMessageId = lastMessage && lastMessage.id;
+            lastMessageId && ($scope.historyFromId = lastMessageId);
+        };
+
         $scope.openModal = function() {
             $('#choose-name').modal('show');
         };
@@ -707,6 +714,9 @@ $chatApp = new Controller(); ?><!doctype html>
 input,button,.alert,.modal-content {
     border-radius: 0!important;
 }
+.ml10 {
+    margin-left:10px;
+}
 </style>
 <body ng-controller="ChatAppCtrl">
     <div class="container">
@@ -714,7 +724,7 @@ input,button,.alert,.modal-content {
         <div class="box box-warning direct-chat direct-chat-warning">
             <div class="box-body">
                 <div class="direct-chat-messages">
-                    <div class="direct-chat-msg" ng-repeat="message in messages" ng-class="{'right':!message.me}">
+                    <div class="direct-chat-msg" ng-repeat="message in messages" ng-if="historyFromId < message.id" ng-class="{'right':!message.me}">
                         <div class="direct-chat-info clearfix">
                             <span class="direct-chat-name" ng-class="{'pull-left':message.me, 'pull-right':!message.me}">{{ message.username }}</span>
                             <span class="direct-chat-timestamp " ng-class="{'pull-left':!message.me, 'pull-right':message.me}">{{ message.date }}</span>
@@ -736,7 +746,8 @@ input,button,.alert,.modal-content {
                     </form>
                     <div class="clearfix">
                         <span class="badge pull-left">Online users: {{ online.total || '1' }}</span>
-                        <a class="badge pull-right" href="" data-toggle="modal" data-target="#choose-name">Change username</a>
+                        <a class="btn btn-xs btn-warning pull-right ml10" href="" data-toggle="modal" data-target="#choose-name">Change username</a>
+                        <a class="btn btn-xs btn-warning pull-right" href="" data-toggle="modal" data-target="#clear-history">Clear history</a>
                         <!--
                         <span class="pull-right">Use shortcodes <span class="badge">[img]http://image.url[/img]</span>
                         <span class="badge">[url]http://url.link/[/url]</span>
@@ -765,6 +776,28 @@ input,button,.alert,.modal-content {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="clear-history">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form>
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span>
+                            <span class="sr-only">Close</span>
+                        </button>
+                        <h4 class="modal-title">Chat history</h4>
+                    </div>
+                    <div class="modal-body">
+                        <label class="radio">Are you sure to clear chat history?</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-sm btn-default" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-sm btn-primary" data-dismiss="modal" ng-click="clearHistory()">Accept</button>
                     </div>
                 </form>
             </div>
