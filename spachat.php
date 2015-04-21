@@ -335,8 +335,6 @@ class Controller extends SPA_Common\Controller
         $this->setHeader(array('Content-Type' => 'application/json'));
         $messages = $this->getModel()->getMessages();
         foreach($messages as &$message) {
-            //$message->username = $this->sanitize($message->username);
-            //$message->message = $this->sanitize($message->message);
             $message->me = $this->getServer('REMOTE_ADDR') === $message->ip;
         }
         return json_encode($messages);
@@ -349,24 +347,28 @@ class Controller extends SPA_Common\Controller
         $ip = $this->getServer('REMOTE_ADDR');
         $this->setCookie('username', $username, 9999 * 9999);
 
-        $isAdmin = preg_match('/^'.ADMIN_USERNAME_PREFIX.'/', $username);
-        $trowCmd = false;
-        if ($isAdmin) {
-            $username = preg_replace('/^'.ADMIN_USERNAME_PREFIX.'/', '', $username);
-            $trowCmd = $this->_parseAdminCommand($message);
-        }
-
         $result = array('success' => false);
-        if ($username && $message && $ip && !$trowCmd) {
+        if ($username && $message) {
+            $cleanUsername = preg_replace('/^'.ADMIN_USERNAME_PREFIX.'/', '', $username);
             $result = array(
-                'success' => $this->getModel()->addMessage($username, $message, $ip)
+                'success' => $this->getModel()->addMessage($cleanUsername, $message, $ip)
             );
         }
+
+        if ($this->_isAdmin($username)) {
+            $this->_parseAdminCommand($message);
+        }
+
         $this->setHeader(array('Content-Type' => 'application/json'));
         return json_encode($result);
     }
 
-    private function _parseAdminCommand($message, $username)
+    private function _isAdmin($username) 
+    {
+        return preg_match('/^'.ADMIN_USERNAME_PREFIX.'/', $username);
+    }
+
+    private function _parseAdminCommand($message)
     {
         if ($message == '/clear') {
             $this->getModel()->removeMessages();
@@ -382,18 +384,20 @@ class Controller extends SPA_Common\Controller
             $this->getModel()->addMessage('Admin', $message, '0.0.0.0');
             return true;
         }
+    }
 
-        return false;
+    private function _getMyUniqueHash() 
+    {
+        $unique  = $this->getServer('REMOTE_ADDR');
+        $unique .= $this->getServer('HTTP_USER_AGENT');
+        $unique .= $this->getServer('HTTP_ACCEPT_LANGUAGE');
+        return md5($unique);
     }
 
     public function pingAction()
     {
         $ip = $this->getServer('REMOTE_ADDR');
-        $unique  = $ip;
-        $unique .= $this->getServer('HTTP_USER_AGENT');
-        $unique .= $this->getServer('HTTP_ACCEPT_LANGUAGE');
-
-        $hash = md5($unique);
+        $hash = $this->_getMyUniqueHash();
 
         $this->getModel()->updateOnline($hash, $ip);
         $this->getModel()->clearOffline();
