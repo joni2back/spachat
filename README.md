@@ -1,4 +1,4 @@
-SPAChat (Simple PHP Angular Ajax Chat)
+SPAChat (Simple Angular Ajax Chat in PHP)
 =======
 
 This project is a refactor of [Joni2Back MySQL Ajax Chat](http://sourceforge.net/projects/joni2back-chat/),
