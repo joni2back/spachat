@@ -604,7 +604,7 @@ $chatApp = new Controller(); ?><!doctype html>
         };
 
         $scope.playAudio = function() {
-            new Audio('beep.ogg').play();
+            new Audio('beep.ogg').play();//use prev instance
         };
 
         $scope.init();
