@@ -136,7 +136,7 @@ abstract class Controller
 
     public function indexAction()
     {
-        return;
+        return null;
     }
 
     public function setResponse($content)
