@@ -452,6 +452,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.pidMessages = null;
         $scope.pidPingServer = null;
 
+        $scope.beep = new Audio('beep.ogg');
         $scope.messages = [];
         $scope.online = null;
         $scope.lastMessageId = null;
@@ -604,7 +605,7 @@ $chatApp = new Controller(); ?><!doctype html>
         };
 
         $scope.playAudio = function() {
-            new Audio('beep.ogg').play();//use prev instance
+            $scope.beep && $scope.beep.play();
         };
 
         $scope.init();
