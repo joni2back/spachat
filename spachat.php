@@ -597,7 +597,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.clearHistory = function() {
             var lastMessage = $scope.getLastMessage();
             var lastMessageId = lastMessage && lastMessage.id;
-            lastMessageId && ($scope.historyFromId = lastMessageId);
+            lastMessageId && ($scope.historyFromId = (lastMessageId + 0));
         };
 
         $scope.openModal = function() {
