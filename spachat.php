@@ -456,7 +456,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.messages = [];
         $scope.online = null;
         $scope.lastMessageId = null;
-        $scope.historyFromId = 0;
+        $scope.historyFromId = null;
 
         $scope.me = {
             username: "<?php echo $chatApp->sanitize($chatApp->getCookie('username')); ?>",
@@ -597,7 +597,7 @@ $chatApp = new Controller(); ?><!doctype html>
         $scope.clearHistory = function() {
             var lastMessage = $scope.getLastMessage();
             var lastMessageId = lastMessage && lastMessage.id;
-            lastMessageId && ($scope.historyFromId = (lastMessageId + 0));
+            lastMessageId && ($scope.historyFromId = lastMessageId);
         };
 
         $scope.openModal = function() {
