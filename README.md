@@ -31,3 +31,7 @@ This mini chat was developed with a simple backend MVC architecture and every pi
 
 * New admin user features
 * New shortcodes features in orden to allow font styles, etc
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/joni2back/spachat/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
