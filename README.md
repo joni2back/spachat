@@ -26,12 +26,3 @@ This mini chat was developed with a simple backend MVC architecture and every pi
   * List online clients IP (By admin command)
   * Clear the chat history (By admin command)
 * JSON API
-
-#### TODO:
-
-* New admin user features
-* New shortcodes features in orden to allow font styles, etc
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/joni2back/spachat/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
