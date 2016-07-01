@@ -12,62 +12,10 @@ namespace SPA_Common;
 define('DB_USERNAME',       'root');
 define('DB_PASSWORD',       'root');
 define('DB_HOST',           'localhost');
-define('DB_NAME',           'chat');
+define('DB_NAME',           'spachat');
 define('CHAT_HISTORY',      '150');
 define('CHAT_ONLINE_RANGE', '1');
 define('ADMIN_USERNAME_PREFIX', 'adm123_');
-
-class SPA_MySQL_Database
-{
-    private $_dbLink, $_queryResponse;
-    public $lastResult;
-
-    public function __construct()
-    {
-        $this->_connect();
-    }
-
-    private function _connect()
-    {
-        $this->_dbLink = mysql_connect(DB_HOST, DB_USERNAME, DB_PASSWORD);
-        mysql_select_db(DB_NAME, $this->_dbLink);
-    }
-
-    public function query($query)
-    {
-        $this->_queryResponse = mysql_query($query, $this->_dbLink);
-        if ($this->_queryResponse) {
-            return $this;
-        }
-    }
-
-    public function getResults()
-    {
-        $this->lastResult = array();
-        if ($this->_queryResponse && !is_bool($this->_queryResponse)) {
-            while ($response = mysql_fetch_object($this->_queryResponse)) {
-                $this->lastResult[] = $response;
-            }
-            mysql_free_result($this->_queryResponse);
-        }
-        return $this->lastResult;
-    }
-
-    public function getOne()
-    {
-        $this->lastResult = null;
-        if ($this->_queryResponse && !is_bool($this->_queryResponse)) {
-            $this->lastResult = mysql_fetch_object($this->_queryResponse);
-            mysql_free_result($this->_queryResponse);
-        }
-        return $this->lastResult;
-    }
-
-    public function disconnect()
-    {
-        return mysql_close($this->_dbLink);
-    }
-}
 
 abstract class Model
 {
@@ -75,7 +23,7 @@ abstract class Model
 
     public function __construct()
     {
-        $this->db = new SPA_MySQL_Database;
+        $this->db = new \mysqli(DB_HOST, DB_USERNAME, DB_PASSWORD, DB_NAME);
     }
 }
 
@@ -261,7 +209,13 @@ class Model extends SPA_Common\Model
     {
         $response = $this->db->query("(SELECT * FROM messages
             ORDER BY `date` DESC LIMIT {$limit}) ORDER BY `date` ASC");
-        return $response->getResults();
+
+        $result = array();
+        while($row = $response->fetch_object()) {
+            $result[] = $row;
+        }
+        $response->free();
+        return $result;
     }
 
     public function addMessage($username, $message, $ip)
@@ -280,7 +234,6 @@ class Model extends SPA_Common\Model
 
     public function removeOldMessages($limit = CHAT_HISTORY)
     {
-        return false;
         return (bool) $this->db->query("DELETE FROM messages
             WHERE id NOT IN (SELECT id FROM messages
                 ORDER BY date DESC LIMIT {$limit})");
@@ -290,9 +243,11 @@ class Model extends SPA_Common\Model
     {
         if ($count) {
             $response = $this->db->query("SELECT count(*) as total FROM online");
-            return $response->getOne();
+
+            return $response->fetch_object();
+
         }
-        return $this->db->query("SELECT ip FROM online")->getResults();
+        return $this->db->query("SELECT ip FROM online")->fetch_object();
     }
 
     public function updateOnline($hash, $ip)
@@ -310,7 +265,7 @@ class Model extends SPA_Common\Model
     public function __destruct()
     {
         if ($this->db) {
-            $this->db->disconnect();
+            $this->db->close();
         }
     }
 
