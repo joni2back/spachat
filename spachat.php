@@ -8,7 +8,6 @@
  */
 
 namespace SPA_Common;
-
 define('DB_USERNAME',       'root');
 define('DB_PASSWORD',       'root');
 define('DB_HOST',           'localhost');
@@ -243,11 +242,15 @@ class Model extends SPA_Common\Model
     {
         if ($count) {
             $response = $this->db->query("SELECT count(*) as total FROM online");
-
             return $response->fetch_object();
-
         }
-        return $this->db->query("SELECT ip FROM online")->fetch_object();
+        $response = $this->db->query("SELECT ip FROM online");
+        $result = array();
+        while($row = $response->fetch_object()) {
+            $result[] = $row;
+        }
+        $response->free(); 
+        return $result;
     }
 
     public function updateOnline($hash, $ip)
